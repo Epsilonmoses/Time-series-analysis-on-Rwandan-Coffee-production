@@ -1,0 +1,55 @@
+# Load required libraries
+library(tseries)
+library(forecast)
+library(ggplot2)
+library(Metrics)
+
+# Define data
+years_1995 <- 1995:2023
+coffee_prod <- c(
+  21952, 15285, 14830, 14268, 18800, 16098, 18366, 19427, 13805, 20017,
+  18597, 22223, 14683, 20724, 19371.89, 19319, 21820.4, 19995, 18346,
+  16379, 21808, 24689.41, 31717.52, 38643.34, 29366.01, 20459, 19466.88,
+  18945.39, 27104.4
+)
+ts_data <- ts(coffee_prod, start = 1995)
+# Plot original time series
+plot(ts_data, main="Coffee Production in Rwanda (1995–2023)", ylab="Production", xlab="Year", col="blue", lwd=2)
+# Level 1 differencing
+diff_data <- diff(ts_data, differences = 1)
+# Plot differenced series
+plot(diff_data, main="Level 1 Differenced Coffee Production", ylab="Differenced Production", xlab="Year", col="red", lwd=2)
+# ADF Test
+adf_result <- adf.test(diff_data)
+print(adf_result)
+# ACF and PACF plots
+acf(diff_data, main="ACF of Differenced Data")
+pacf(diff_data, main="PACF of Differenced Data")
+
+# Fit ARIMA(0,1,0) model
+model_1 <- Arima(ts_data, order = c(0, 1, 0))
+summary(model_1)
+# Fit ARIMA(0,1,1) model
+model_2 <- Arima(ts_data, order = c(0, 1, 1))
+summary(model_2)
+# Forecast 2024 to 2028
+future_forecast <- forecast(model, h = 5)
+print(future_forecast)
+# Plot forecast
+autoplot(future_forecast) + 
+  ggtitle("Forecast of Coffee Production (2024–2028)") + 
+  ylab("Production") + xlab("Year")
+# Model diagnostics
+print(summary(model)$coef)
+acf(residuals(model), main = "ACF of Model Residuals")
+lb_test <- Box.test(residuals(model), lag = 10, type = "Ljung-Box")
+print(lb_test)
+qqnorm(residuals(model), main = "Q-Q Plot of Residuals")
+qqline(residuals(model), col = "red")
+hist(residuals(model), breaks = 10, main = "Histogram of Residuals", col = "lightblue", xlab = "Residuals")
+fitted_value <- fitted(model_1)
+fitted_values <- fitted(model_2)
+actual_values <- ts_data
+r_squared_1 <- 1 - sum((actual_values - fitted_value)^2) / sum((actual_values - mean(actual_values))^2)
+r_squared_2 <- 1 - sum((actual_values - fitted_values)^2) / sum((actual_values - mean(actual_values))^2)
+cat(r_squared_1, r_squared_2)
