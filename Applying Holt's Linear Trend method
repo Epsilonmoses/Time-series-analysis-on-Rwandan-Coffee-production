@@ -1,0 +1,25 @@
+holt_model <- holt(ts_data, h = 5)
+summary(holt_model)
+# Plot fitted and forecasted values
+autoplot(holt_model) + 
+  ggtitle("Holt's Linear Trend Model - Coffee Production") +
+  ylab("Production") + xlab("Year")
+# Calculate accuracy metrics
+fitted_values <- fitted(holt_model)
+actual_values <- ts_data
+r_squared <- 1 - sum((actual_values - fitted_values)^2) / sum((actual_values - mean(actual_values))^2)
+cat(sprintf(r_squared))
+# Residual diagnostics
+residuals <- residuals(holt_model)
+acf(residuals, main = "ACF of Residuals (Holt's Method)")
+lb_test <- Box.test(residuals, lag = 5, type = "Ljung-Box", fitdf = 2)
+qqnorm(residuals, main = "Q-Q Plot of Residuals")
+qqline(residuals, col = "red")
+hist(residuals, breaks = 10, main = "Histogram of Residuals", col = "lightblue", xlab = "Residuals")
+# Plot residuals against time
+autoplot(residuals) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  ggtitle("Holt's Method: Residuals Over Time") +
+  xlab("Year") +
+  ylab("Residuals") +
+  theme_minimal()
